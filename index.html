@@ -1,0 +1,304 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Qlik OAuth PKCE Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{--b:#0a7f2e;--e:#b00020;--m:#666;--bd:#e5e7eb}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:24px;line-height:1.45}
+    h1{margin:0 0 10px}
+    .wrap{max-width:980px;margin:auto}
+    .card{border:1px solid var(--bd);border-radius:12px;padding:18px;margin:14px 0;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+    label{display:block;font-weight:600;margin:10px 0 6px}
+    input,select,textarea{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font:inherit}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{border:1px solid #d1d5db;background:#0f172a;color:#fff;padding:10px 14px;border-radius:8px;cursor:pointer}
+    button.secondary{background:#fff;color:#0f172a}
+    .small{font-size:12px;color:var(--m)}
+    .ok{color:var(--b)} .err{color:var(--e)}
+    code{background:#f6f8fa;padding:2px 6px;border-radius:6px}
+    pre{background:#0b1020;color:#d7e0ff;padding:12px;border-radius:10px;overflow:auto}
+    .kv{display:grid;grid-template-columns:180px 1fr;gap:8px 14px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Qlik OAuth PKCE Test</h1>
+  <p class="small">
+    Diese Seite erzeugt <strong>PKCE</strong> (S256), baut die <code>/oauth/authorize</code>-URL und startet den Flow.
+    Nach der Anmeldung sendet die <em>Callback-Seite</em> (deine <code>oauth_callback.html</code>) den Code via
+    <code>postMessage</code> zurück und er wird hier angezeigt. <br />
+    Quelle: Qlik SPA-Clients &amp; OAuth/PKCE-Doku. <a href="https://qlik.dev/authenticate/oauth/create/create-oauth-client-spa/" target="_blank" rel="noreferrer">SPA-Client</a> · <a href="https://www.qlik.dev/apis/rest/oauth/" target="_blank" rel="noreferrer">OAuth REST</a>
+  </p>
+
+  <div class="card">
+    <h2>1) Basis-Konfiguration</h2>
+    <div class="row">
+      <div>
+        <label for="tenant">Tenant-Base-URL (mit Region)</label>
+        <input id="tenant" placeholder="https://<tenant>.<region>.qlikcloud.com" />
+        <div class="small">Beispiel: <code>https://acme.eu.qlikcloud.com</code></div>
+      </div>
+      <div>
+        <label for="clientId">Client ID (SPA)</label>
+        <input id="clientId" placeholder="z.B. 3x8a...abcd" />
+        <div class="small">Aus deinem in Qlik erstellten OAuth2 SPA‑Client.</div>
+      </div>
+    </div>
+
+    <label for="redirect">Redirect URI</label>
+    <input id="redirect" />
+
+    <label for="scopes">Scopes (Leerzeichen-getrennt)</label>
+    <input id="scopes" value="user_default" />
+
+    <div class="row">
+      <div>
+        <label for="prompt">Prompt</label>
+        <select id="prompt">
+          <option value="">(kein Prompt-Parameter)</option>
+          <option value="login">login</option>
+          <option value="none">none</option>
+        </select>
+      </div>
+      <div>
+        <label for="loginHint">login_hint (optional)</label>
+        <input id="loginHint" placeholder="user@domain.tld" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="state">State</label>
+        <input id="state" />
+        <div class="small">Wird automatisch generiert – kann überschrieben werden.</div>
+      </div>
+      <div>
+        <label for="openMode">Öffnen</label>
+        <select id="openMode">
+          <option value="popup">Im Popup öffnen</option>
+          <option value="self">Im selben Tab</option>
+          <option value="blank">In neuem Tab</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="btns">
+      <button id="btnPkce">PKCE erzeugen</button>
+      <button id="btnBuild" class="secondary">Authorize-URL erzeugen</button>
+      <button id="btnOpen">Authorize öffnen</button>
+      <button id="btnReset" class="secondary">Zurücksetzen</button>
+    </div>
+    <p id="pkceStatus" class="small"></p>
+  </div>
+
+  <div class="card">
+    <h2>2) Prüfen &amp; Starten</h2>
+    <label for="authUrl">Authorize-URL</label>
+    <textarea id="authUrl" rows="4" spellcheck="false"></textarea>
+
+    <h3>Generierte PKCE-Daten</h3>
+    <div class="kv">
+      <div><strong>code_verifier</strong></div><div id="codeVerifier" class="small"></div>
+      <div><strong>code_challenge</strong></div><div id="codeChallenge" class="small"></div>
+      <div><strong>state</strong></div><div id="stateOut" class="small"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3) Rückmeldung aus Callback</h2>
+    <p class="small">Wenn deine <code>oauth_callback.html</code> per <code>postMessage</code> antwortet, erscheinen die Werte hier.</p>
+    <div class="kv">
+      <div><strong>code</strong></div><div id="cbCode">—</div>
+      <div><strong>state</strong></div><div id="cbState">—</div>
+      <div><strong>error</strong></div><div id="cbError">—</div>
+      <div><strong>error_description</strong></div><div id="cbErrDesc">—</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>4) (Optional) Beispiel: Token-Tausch (nur Server‑Side!)</h2>
+    <p class="small">
+      Den <em>Authorization Code</em> musst du auf dem **Server** gegen Tokens tauschen
+      (<code>POST /oauth/token</code> mit <code>code_verifier</code>). Nicht im Browser!
+      Dokumentation: <a href="https://www.qlik.dev/apis/rest/oauth/" target="_blank" rel="noreferrer">OAuth REST</a>.
+    </p>
+<pre id="curl" aria-label="cURL Beispiel">
+# Beispiel (auf deinem Server ausführen, nicht im Browser):
+curl -X POST "$TENANT/oauth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "grant_type=authorization_code" \
+  --data-urlencode "code=$AUTH_CODE" \
+  --data-urlencode "redirect_uri=$REDIRECT_URI" \
+  --data-urlencode "code_verifier=$CODE_VERIFIER"
+</pre>
+  </div>
+</div>
+
+<script>
+  // ---------- Utilities ----------
+  const $ = sel => document.querySelector(sel);
+  const b64url = (buf) => {
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+    return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  };
+  const textToBuf = (txt) => new TextEncoder().encode(txt);
+
+  function randomUrlSafe(len=96){
+    // 96 chars to satisfy 43..128 requirement; chars: A-Z a-z 0-9 -._~
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    const rnd = new Uint8Array(len);
+    crypto.getRandomValues(rnd);
+    return Array.from(rnd, n => chars[n % chars.length]).join('');
+  }
+
+  async function sha256Base64Url(inputText){
+    const data = textToBuf(inputText);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return b64url(hash);
+  }
+
+  function buildAuthorizeUrl({tenant, clientId, redirect, scopes, state, codeChallenge, loginHint, prompt}){
+    const u = new URL('/oauth/authorize', tenant);
+    u.searchParams.set('client_id', clientId);
+    u.searchParams.set('response_type', 'code'); // SPA: Authorization Code + PKCE
+    u.searchParams.set('redirect_uri', redirect);
+    u.searchParams.set('scope', scopes.trim());
+    u.searchParams.set('state', state);
+    u.searchParams.set('code_challenge_method', 'S256');
+    u.searchParams.set('code_challenge', codeChallenge);
+    if (loginHint) u.searchParams.set('login_hint', loginHint);
+    if (prompt) u.searchParams.set('prompt', prompt);
+    return u.toString();
+  }
+
+  function setText(id, value){ const el = document.getElementById(id); el.textContent = value || '—'; }
+
+  // ---------- State ----------
+  const KEY = 'qlik_pkce_test';
+  const state = {
+    code_verifier: '',
+    code_challenge: '',
+    state: ''
+  };
+
+  function save(){
+    sessionStorage.setItem(KEY, JSON.stringify(state));
+  }
+  function load(){
+    try{
+      const raw = sessionStorage.getItem(KEY);
+      if (raw) Object.assign(state, JSON.parse(raw));
+    }catch{}
+  }
+  function resetAll(){
+    state.code_verifier = '';
+    state.code_challenge = '';
+    state.state = '';
+    save();
+    $('#codeVerifier').textContent = '';
+    $('#codeChallenge').textContent = '';
+    $('#stateOut').textContent = '';
+    $('#authUrl').value = '';
+    $('#pkceStatus').textContent = '';
+    setText('cbCode','—'); setText('cbState','—'); setText('cbError','—'); setText('cbErrDesc','—');
+  }
+
+  // ---------- Init UI defaults ----------
+  (function init(){
+    // Vorbelegung für dich:
+    $('#redirect').value = 'https://nexpert-ag.github.io/qlik-oauth-test/oauth_callback.html';
+    $('#state').value = randomUrlSafe(24);
+    load();
+    if (state.code_verifier){
+      $('#codeVerifier').textContent = state.code_verifier;
+      $('#codeChallenge').textContent = state.code_challenge;
+      $('#stateOut').textContent = state.state;
+    }
+  })();
+
+  // ---------- Events ----------
+  $('#btnPkce').addEventListener('click', async () => {
+    state.code_verifier = randomUrlSafe(96); // 96 chars (zwischen 43 und 128)
+    state.code_challenge = await sha256Base64Url(state.code_verifier);
+    state.state = $('#state').value || randomUrlSafe(24);
+    save();
+    $('#codeVerifier').textContent = state.code_verifier;
+    $('#codeChallenge').textContent = state.code_challenge;
+    $('#stateOut').textContent = state.state;
+    $('#pkceStatus').innerHTML = '<span class="ok"><strong>PKCE erzeugt.</strong></span> code_verifier ist in sessionStorage gespeichert.';
+  });
+
+  $('#btnBuild').addEventListener('click', () => {
+    const tenant = $('#tenant').value.trim();
+    const clientId = $('#clientId').value.trim();
+    const redirect = $('#redirect').value.trim();
+    const scopes = $('#scopes').value.trim() || 'user_default';
+    const loginHint = $('#loginHint').value.trim();
+    const prompt = $('#prompt').value;
+
+    if (!tenant || !clientId || !redirect || !state.code_challenge || !state.state){
+      alert('Bitte Tenant, Client ID, Redirect und zuvor PKCE erzeugen.');
+      return;
+    }
+    const url = buildAuthorizeUrl({
+      tenant, clientId, redirect, scopes,
+      state: state.state, codeChallenge: state.code_challenge,
+      loginHint, prompt
+    });
+    $('#authUrl').value = url;
+
+    // Update cURL Template (nur Info)
+    $('#curl').textContent =
+`# Auf dem Server (nicht im Browser) ausführen, nachdem der Code empfangen wurde:
+curl -X POST "${tenant.replace(/\/+$/,'')}/oauth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "grant_type=authorization_code" \
+  --data-urlencode "code=$AUTH_CODE" \
+  --data-urlencode "redirect_uri=${redirect}" \
+  --data-urlencode "code_verifier=${state.code_verifier}"`;
+  });
+
+  $('#btnOpen').addEventListener('click', () => {
+    const url = $('#authUrl').value.trim();
+    if (!url){ alert('Bitte zuerst die Authorize-URL erzeugen.'); return; }
+    const mode = $('#openMode').value;
+    if (mode === 'popup'){
+      const w = 500, h = 700;
+      const left = window.screenX + Math.max(0,(window.outerWidth - w)/2);
+      const top  = window.screenY + Math.max(0,(window.outerHeight - h)/2);
+      window.open(url, 'qlik-oauth', `width=${w},height=${h},left=${left},top=${top}`);
+    } else if (mode === 'self'){
+      window.location.href = url;
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  });
+
+  $('#btnReset').addEventListener('click', resetAll);
+
+  // ---------- Receive postMessage from oauth_callback.html ----------
+  window.addEventListener('message', (ev) => {
+    try{
+      const data = ev.data || {};
+      // Optional: Du könntest hier ev.origin prüfen (z. B. auf *.github.io)
+      if (data.source === 'qlik-oauth-callback' || 'code' in data || 'error' in data){
+        setText('cbCode', data.code || '—');
+        setText('cbState', data.state || '—');
+        setText('cbError', data.error || '—');
+        setText('cbErrDesc', data.error_description || data.errorDesc || '—');
+
+        // State-Check (Empfehlung)
+        if (data.state && state.state && data.state !== state.state){
+          alert('Achtung: STATE stimmt nicht überein!');
+        }
+      }
+    }catch{}
+  });
+</script>
+</body>
+</html>
+``
