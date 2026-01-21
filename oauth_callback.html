@@ -1,68 +1,22 @@
-
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Qlik OAuth Callback</title>
+  <title>OAuth Callback</title>
+
+  <!-- Qlik Embed OAuth Helper -->
+  <ttps://cdn.jsdelivr.net/npm/@qlik/embed-web-components@1/dist/oauth/callback.js
+
   <style>
-    body{font-family:system-ui,Arial,sans-serif;margin:40px;line-height:1.45}
-    .card{max-width:800px;margin:auto;border:1px solid #ddd;border-radius:8px;padding:24px;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
-    h1{margin-top:0}
-    .ok{color:#0a7f2e}
-    .err{color:#b00020}
-    .warn{color:#946200}
-    code{background:#f1f1f1;padding:2px 6px;border-radius:4px}
-    .kv{display:grid;grid-template-columns:180px 1fr;gap:8px 12px;margin-top:16px}
-    .small{font-size:12px;color:#666}
+    body { 
+      font-family: sans-serif; 
+      padding: 20px; 
+      color: #333; 
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Qlik OAuth Redirect</h1>
-    <p class="small">Diese Seite verarbeitet den Authorization Code von Qlik Cloud.</p>
-
-    <div id="status"></div>
-    <div id="details" class="kv" hidden></div>
-  </div>
-
-  <script>
-    (function(){
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
-      const state = params.get("state");
-      const error = params.get("error");
-      const errorDesc = params.get("error_description");
-
-      const status = document.getElementById("status");
-      const details = document.getElementById("details");
-
-      function addRow(label, value){
-        const l = document.createElement("div"); l.innerHTML = "<strong>"+label+"</strong>";
-        const v = document.createElement("div"); v.textContent = value || "";
-        details.appendChild(l); details.appendChild(v);
-      }
-
-      if(error){
-        status.innerHTML = `<p class="err"><strong>Fehler:</strong> ${error}</p>
-                            <p>${errorDesc || ""}</p>`;
-        details.hidden = false;
-        addRow("state", state);
-      } else if(code){
-        status.innerHTML = `<p class="ok"><strong>Success:</strong> Code empfangen.</p>`;
-        details.hidden = false;
-        addRow("code", code);
-        addRow("state", state || "—");
-      } else {
-        status.innerHTML = `<p class="warn"><strong>Hinweis:</strong> Keine OAuth-Parameter gefunden.</p>`;
-      }
-
-      try{
-        if(window.opener){
-          window.opener.postMessage({code, state, error, errorDesc}, "*");
-        }
-      }catch(e){}
-    })();
-  </script>
+  <h3>Authentifizierung läuft…</h3>
+  <p>Bitte warten, Sie werden zurückgeleitet.</p>
 </body>
 </html>
