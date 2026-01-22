@@ -32,12 +32,23 @@
   </style>
 </head>
 <body>
-  <h1>HKS Factbook - Absatz Details Embed</h1>
-  
-  <qlik-embed
-    ui="analytics/sheet"
-    app-id="9e483255-bb29-46ad-800a-0b64c8b65027"
-    sheet-id="7af4d41a-0b05-41a8-ad17-13873f78a2ee">
-  </qlik-embed>
+    <div id="main-app">
+      <div class="container">
+        <h1>@qlik/embed-web-components quickstart example</h1>
+        <h2>For a step-by-step tutorial <a href="https://qlik.dev/embed/qlik-embed/quickstart/qlik-embed-webcomponent-quickstart/" target="_blank" rel="noopener noreferrer">click here</a>.</h2>
+        <h2>Make sure to configure the html files to point to your Qlik Cloud tenant.</h2>
+      </div>
+      <div id="analytics-chart" class="container">
+      <h2>qlik-embed analytics/chart embeds a chart in the page.</h2>
+      <h3><i>Renders only nebula.js visualizations.</i></h3>
+      <div class="viz">
+        <qlik-embed
+          id="visualization"
+          ui="analytics/chart"
+          app-id="9e483255-bb29-46ad-800a-0b64c8b65027"
+          object-id="KhXhTJ"
+        ></qlik-embed>
+      </div>
+    </div>
 </body>
 </html>
