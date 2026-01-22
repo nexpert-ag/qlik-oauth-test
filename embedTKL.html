@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qlik Dashboard Test</title>
+  <script
+    src="https://cdn.jsdelivr.net/npm/@qlik/embed-web-components@1/dist/index.min.js"
+    data-host="https://nexpertag.eu.qlikcloud.com"
+    data-client-id="019be184467ca77832148e24b21c23ac"
+    data-redirect-url="https://nexpert-ag.github.io/qlik-oauth-test/oauth_callback.html"
+    data-auth-type="oauth2"
+    crossorigin="anonymous">
+  </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+    }
+    qlik-embed {
+      width: 100%;
+      height: 800px;
+      border: 1px solid #ddd;
+      background: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>HKS Factbook - Absatz Details Embed</h1>
+  
+  <qlik-embed
+    ui="analytics/sheet"
+    app-id="8733bca9-0598-49c4-915b-54866a383e9c"
+    sheet-id="57d4918e-cdff-490f-bb4f-8fb764eba1ac">
+  </qlik-embed>
+</body>
+</html>
