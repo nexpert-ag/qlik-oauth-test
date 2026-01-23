@@ -28,11 +28,11 @@
         box-sizing: border-box;
       }
 
-      /* Optionaler Innen-Container (kann auch entfallen) */
+      /* Optionaler Innen-Container  */
       .container {
         display: flex;
         flex-direction: column;
-        flex: 1 1 auto;       /* fülle den verfügbaren Platz */
+        flex: 1 1 auto;       
         padding: 8px;
         gap: 8px;
         box-sizing: border-box;
@@ -40,14 +40,14 @@
 
       /* Der sichtbare App-Frame ohne feste Größen! */
       .classic-app {
-        flex: 1 1 auto;               /* wächst mit */
-        min-height: 0;                /* wichtig, damit das Kind 100% Höhe nutzen kann */
+        flex: 1 1 auto;              
+        min-height: 0;               
         border: 1px solid #bbb;
         border-radius: 3px;
         box-shadow: 1px 1px 10px rgba(0,0,0,0.2);
-        overflow: hidden;             /* oder auto, je nach Wunsch */
+        overflow: hidden;           
         background: #fff;
-        display: flex;                /* um das qlik-embed auf 100% zu stretchen */
+        display: flex;                
       }
 
       /* Das eigentliche Embed: immer volle Breite/Höhe */
@@ -57,7 +57,7 @@
         height: 100%;
       }
 
-      /* Falls du zusätzlich einzelne Visualisierungen nutzt: auch responsiv */
+      /* Für zusätzlich einzelne Visualisierungen nutzt: auch responsiv */
       .viz {
         width: 100%;
         height: 100%;
