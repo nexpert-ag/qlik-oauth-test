@@ -1,0 +1,47 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard Host</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    .wrap { height: 100%; display: flex; flex-direction: column; }
+    .bar { padding: 10px 14px; font: 14px/1.4 system-ui, sans-serif; color: #333; background: #f5f5f5; border-bottom: 1px solid #e3e3e3; }
+    .frame { flex: 1; border: none; width: 100%; }
+    button { cursor: pointer; }
+  </style>
+  <script>
+    (function () {
+      // Falls der Keyname anders ist, im Session Storage prüfen und anpassen.
+      const token = sessionStorage.getItem("qlik.accessToken");
+      if (!token) {
+        // Kein Token -> ganzen Tab (Top-Window) zur POC schicken,
+        // und die aktuelle Seite als returnUrl mitgeben.
+        const returnUrl = window.location.href;
+        const pocUrl = "https://nexpert-ag.github.io/qlik-oauth-test/POC_V002.html";
+        window.top.location.replace(pocUrl + "?returnUrl=" + encodeURIComponent(returnUrl));
+      }
+    })();
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="bar">
+      <strong>Dashboard</strong><span style="opacity:.6"> – eingebettet</span>
+      <button style="float:right"
+              onclick="sessionStorage.removeItem('qlik.accessToken'); location.reload();">
+        Neu anmelden
+      </button>
+    </div>
+
+    <!-- Nur laden, wenn Token vorhanden ist (sonst hat das Script oben bereits redirected) -->
+    <iframe
+      class="frame"
+      src="https://nexpert-ag.github.io/qlik-oauth-test/POC_V002.html"
+      allowfullscreen
+    ></iframe>
+  </div>
+</body>
+</html>
