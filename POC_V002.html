@@ -1,6 +1,30 @@
 
 <!DOCTYPE html>
 <html lang="de">
+  
+  <script>
+    (function () {
+      function getParam(name) {
+        const m = new RegExp('[?&]'+name+'=([^&#]*)').exec(location.href);
+        return m ? decodeURIComponent(m[1]) : null;
+      }
+      const returnUrl = getParam('returnUrl');
+      function hasToken(){ return !!sessionStorage.getItem('qlik.accessToken'); }
+  
+      function back() { if (returnUrl && hasToken()) location.replace(returnUrl); }
+  
+      back();
+      let tries = 0;
+      const t = setInterval(() => {
+        tries++;
+        if (hasToken() || tries > 20) {
+          clearInterval(t);
+          back();
+        }
+      }, 300);
+    })();
+  </script>
+
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
