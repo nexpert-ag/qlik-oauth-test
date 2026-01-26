@@ -20,6 +20,17 @@
     }
   </style>
 </head>
+  
+<script>
+  (function () {
+    const m = /[?&]returnUrl=([^&#]+)/.exec(location.href);
+    const returnUrl = m ? decodeURIComponent(m[1]) : null;
+    setTimeout(function () {
+      location.replace(returnUrl || "https://nexpert-ag.github.io/qlik-oauth-test/POC_V002.html");
+    }, 800);
+  })();
+</script>
+
 <body>
   <h3>Authentifizierung läuft…</h3>
   <p>Bitte warten, Sie werden zurückgeleitet.</p>
