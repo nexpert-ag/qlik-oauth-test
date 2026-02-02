@@ -1,0 +1,121 @@
+<!-- login.html - VERBESSERTE VERSION -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard Host</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
+    .wrap { height: 100%; display: flex; flex-direction: column; }
+    .bar { padding: 10px 14px; font-size: 14px; color: #333; background: #f5f5f5; border-bottom: 1px solid #e3e3e3; }
+    .frame { flex: 1; border: none; width: 100%; }
+    .login-overlay { 
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.95); 
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    .login-box {
+      text-align: center; padding: 40px;
+      background: white; border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    button { 
+      cursor: pointer; padding: 12px 24px; font-size: 16px;
+      background: #4285f4; color: white; border: none;
+      border-radius: 4px; margin-top: 20px;
+    }
+    button:hover { background: #357ae8; }
+  </style>
+  <script>
+    (function () {
+      const QLIK_HOST = "https://nexpertag.eu.qlikcloud.com";
+      const CLIENT_ID = "019be184467ca77832148e24b21c23ac";
+      const REDIRECT_URI = "https://nexpert-ag.github.io/qlik-oauth-test/oauth_callback.html";
+      
+      function hasValidToken() {
+        const token = sessionStorage.getItem("qlik.accessToken");
+        if (!token) return false;
+        
+        // Optional: Token-Ablauf prüfen
+        const expiry = sessionStorage.getItem("qlik.accessToken.expiry");
+        if (expiry && Date.now() > parseInt(expiry)) {
+          sessionStorage.removeItem("qlik.accessToken");
+          return false;
+        }
+        return true;
+      }
+
+      function startOAuthPopup() {
+        const authUrl = `${QLIK_HOST}/login/oauth/authorize?` +
+          `client_id=${CLIENT_ID}&` +
+          `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
+          `response_type=token&` +
+          `scope=user_default&` +
+          `state=${Math.random().toString(36).substring(7)}`;
+        
+        const popup = window.open(
+          authUrl,
+          'QlikLogin',
+          'width=500,height=600,left=200,top=100'
+        );
+
+        // Überwache das Popup
+        const checkPopup = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkPopup);
+            // Prüfe ob Token jetzt vorhanden
+            if (hasValidToken()) {
+              location.reload();
+            } else {
+              alert('Login abgebrochen oder fehlgeschlagen');
+            }
+          }
+        }, 500);
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        if (!hasValidToken()) {
+          // Zeige Login-Overlay
+          document.getElementById('login-overlay').style.display = 'flex';
+        } else {
+          // Lade Dashboard
+          document.getElementById('login-overlay').style.display = 'none';
+        }
+      });
+
+      window.loginToQlik = startOAuthPopup;
+      
+      window.logout = function() {
+        sessionStorage.removeItem('qlik.accessToken');
+        sessionStorage.removeItem('qlik.accessToken.expiry');
+        location.reload();
+      };
+    })();
+  </script>
+</head>
+<body>
+  <!-- Login Overlay -->
+  <div id="login-overlay" class="login-overlay" style="display:none;">
+    <div class="login-box">
+      <h2>Qlik Dashboard</h2>
+      <p>Bitte melden Sie sich an, um das Dashboard anzuzeigen.</p>
+      <button onclick="loginToQlik()">Bei Qlik anmelden</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="wrap">
+    <div class="bar">
+      <strong>Dashboard</strong><span style="opacity:.6"> – eingebettet</span>
+      <button style="float:right" onclick="logout()">Abmelden</button>
+    </div>
+    <iframe
+      class="frame"
+      src="https://nexpert-ag.github.io/qlik-oauth-test/POC_V002.html"
+      allowfullscreen
+    ></iframe>
+  </div>
+</body>
+</html>
