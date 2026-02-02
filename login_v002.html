@@ -1,4 +1,3 @@
-<!-- login.html - VERBESSERTE VERSION -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -6,112 +5,289 @@
   <title>Dashboard Host</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
-    .wrap { height: 100%; display: flex; flex-direction: column; }
-    .bar { padding: 10px 14px; font-size: 14px; color: #333; background: #f5f5f5; border-bottom: 1px solid #e3e3e3; }
-    .frame { flex: 1; border: none; width: 100%; }
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
+    }
+    .wrap { 
+      height: 100%; 
+      display: flex; 
+      flex-direction: column; 
+    }
+    .bar { 
+      padding: 10px 14px; 
+      font-size: 14px; 
+      color: #333; 
+      background: #f5f5f5; 
+      border-bottom: 1px solid #e3e3e3;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .frame { 
+      flex: 1; 
+      border: none; 
+      width: 100%; 
+      min-height: 0;
+    }
     .login-overlay { 
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255,255,255,0.95); 
-      display: flex; align-items: center; justify-content: center;
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      right: 0; 
+      bottom: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
       z-index: 9999;
     }
     .login-box {
-      text-align: center; padding: 40px;
-      background: white; border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      text-align: center; 
+      padding: 50px 40px;
+      background: white; 
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 400px;
     }
-    button { 
-      cursor: pointer; padding: 12px 24px; font-size: 16px;
-      background: #4285f4; color: white; border: none;
-      border-radius: 4px; margin-top: 20px;
+    .login-box h2 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 28px;
     }
-    button:hover { background: #357ae8; }
+    .login-box p {
+      color: #666;
+      margin: 0 0 30px 0;
+      font-size: 15px;
+    }
+    .btn-primary { 
+      cursor: pointer; 
+      padding: 14px 32px; 
+      font-size: 16px;
+      font-weight: 500;
+      background: #667eea; 
+      color: white; 
+      border: none;
+      border-radius: 6px; 
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    .btn-primary:hover { 
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+    .btn-secondary {
+      cursor: pointer;
+      padding: 8px 16px;
+      font-size: 14px;
+      background: white;
+      color: #667eea;
+      border: 1px solid #667eea;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background: #f0f2ff;
+    }
+    .status-message {
+      text-align: center;
+      padding: 12px;
+      margin: 20px;
+      border-radius: 6px;
+      display: none;
+    }
+    .status-error {
+      background: #fee;
+      color: #c33;
+      border: 1px solid #fcc;
+    }
+    .status-success {
+      background: #efe;
+      color: #3c3;
+      border: 1px solid #cfc;
+    }
   </style>
   <script>
     (function () {
+      // ========== KONFIGURATION ==========
       const QLIK_HOST = "https://nexpertag.eu.qlikcloud.com";
       const CLIENT_ID = "019be184467ca77832148e24b21c23ac";
       const REDIRECT_URI = "https://nexpert-ag.github.io/qlik-oauth-test/oauth_callback.html";
       
+      // KORRIGIERT: Richtiger OAuth-Endpunkt für Qlik Cloud
+      const AUTH_URL = `${QLIK_HOST}/oauth/authorize`;
+      
+      // ========== TOKEN MANAGEMENT ==========
       function hasValidToken() {
         const token = sessionStorage.getItem("qlik.accessToken");
         if (!token) return false;
         
-        // Optional: Token-Ablauf prüfen
+        // Token-Ablauf prüfen (optional)
         const expiry = sessionStorage.getItem("qlik.accessToken.expiry");
         if (expiry && Date.now() > parseInt(expiry)) {
+          console.log("Token abgelaufen");
           sessionStorage.removeItem("qlik.accessToken");
+          sessionStorage.removeItem("qlik.accessToken.expiry");
           return false;
         }
         return true;
       }
 
+      // ========== POPUP OAUTH FLOW ==========
       function startOAuthPopup() {
-        const authUrl = `${QLIK_HOST}/login/oauth/authorize?` +
-          `client_id=${CLIENT_ID}&` +
+        const state = Math.random().toString(36).substring(7);
+        sessionStorage.setItem('oauth.state', state);
+        
+        const authUrl = `${AUTH_URL}?` +
+          `client_id=${encodeURIComponent(CLIENT_ID)}&` +
           `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
           `response_type=token&` +
           `scope=user_default&` +
-          `state=${Math.random().toString(36).substring(7)}`;
+          `state=${state}`;
+        
+        console.log("Öffne OAuth Popup:", authUrl);
         
         const popup = window.open(
           authUrl,
           'QlikLogin',
-          'width=500,height=600,left=200,top=100'
+          'width=520,height=650,left=200,top=100,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes'
         );
 
-        // Überwache das Popup
+        if (!popup) {
+          showStatus("Popup wurde blockiert! Bitte erlauben Sie Popups für diese Seite.", "error");
+          return;
+        }
+
+        // Überwache das Popup und prüfe auf Token
+        let checkCount = 0;
+        const maxChecks = 120; // 60 Sekunden
+        
         const checkPopup = setInterval(() => {
+          checkCount++;
+          
+          // Popup wurde geschlossen
           if (popup.closed) {
             clearInterval(checkPopup);
-            // Prüfe ob Token jetzt vorhanden
-            if (hasValidToken()) {
-              location.reload();
-            } else {
-              alert('Login abgebrochen oder fehlgeschlagen');
-            }
+            console.log("Popup geschlossen");
+            
+            // Kurz warten und dann Token prüfen
+            setTimeout(() => {
+              if (hasValidToken()) {
+                console.log("Token erfolgreich erhalten!");
+                showStatus("Anmeldung erfolgreich!", "success");
+                setTimeout(() => location.reload(), 1000);
+              } else {
+                console.warn("Kein Token gefunden");
+                showStatus("Login wurde abgebrochen oder war nicht erfolgreich.", "error");
+              }
+            }, 500);
+            return;
+          }
+          
+          // Timeout nach 60 Sekunden
+          if (checkCount >= maxChecks) {
+            clearInterval(checkPopup);
+            popup.close();
+            showStatus("Login-Zeitüberschreitung. Bitte versuchen Sie es erneut.", "error");
+          }
+          
+          // Prüfe ob Token bereits da ist (manchmal schneller als Popup-Close)
+          if (hasValidToken()) {
+            clearInterval(checkPopup);
+            popup.close();
+            showStatus("Anmeldung erfolgreich!", "success");
+            setTimeout(() => location.reload(), 1000);
           }
         }, 500);
       }
 
-      window.addEventListener('DOMContentLoaded', () => {
-        if (!hasValidToken()) {
-          // Zeige Login-Overlay
-          document.getElementById('login-overlay').style.display = 'flex';
-        } else {
-          // Lade Dashboard
-          document.getElementById('login-overlay').style.display = 'none';
+      // ========== STATUS MESSAGES ==========
+      function showStatus(message, type) {
+        const statusDiv = document.getElementById('status-message');
+        if (statusDiv) {
+          statusDiv.textContent = message;
+          statusDiv.className = 'status-message status-' + type;
+          statusDiv.style.display = 'block';
+          
+          if (type === 'success') {
+            setTimeout(() => {
+              statusDiv.style.display = 'none';
+            }, 3000);
+          }
         }
-      });
+      }
 
-      window.loginToQlik = startOAuthPopup;
-      
+      // ========== LOGOUT ==========
       window.logout = function() {
         sessionStorage.removeItem('qlik.accessToken');
         sessionStorage.removeItem('qlik.accessToken.expiry');
+        sessionStorage.removeItem('oauth.state');
+        console.log("Ausgeloggt");
         location.reload();
       };
+
+      // ========== INITIALISIERUNG ==========
+      window.addEventListener('DOMContentLoaded', () => {
+        console.log("Seite geladen, prüfe Token...");
+        
+        const overlay = document.getElementById('login-overlay');
+        const dashboardWrap = document.getElementById('dashboard-wrap');
+        
+        if (!hasValidToken()) {
+          console.log("Kein gültiges Token → Zeige Login");
+          overlay.style.display = 'flex';
+          dashboardWrap.style.display = 'none';
+        } else {
+          console.log("Token vorhanden → Zeige Dashboard");
+          overlay.style.display = 'none';
+          dashboardWrap.style.display = 'flex';
+        }
+      });
+
+      // Mache Login-Funktion global verfügbar
+      window.loginToQlik = startOAuthPopup;
+      
+      // Debug: Token-Status loggen
+      setInterval(() => {
+        const token = sessionStorage.getItem("qlik.accessToken");
+        if (token) {
+          console.log("Token Status: Vorhanden (" + token.substring(0, 20) + "...)");
+        }
+      }, 10000);
+      
     })();
   </script>
 </head>
 <body>
+  <!-- Status Messages -->
+  <div id="status-message" class="status-message"></div>
+
   <!-- Login Overlay -->
   <div id="login-overlay" class="login-overlay" style="display:none;">
     <div class="login-box">
-      <h2>Qlik Dashboard</h2>
-      <p>Bitte melden Sie sich an, um das Dashboard anzuzeigen.</p>
-      <button onclick="loginToQlik()">Bei Qlik anmelden</button>
+      <h2>🎯 Qlik Dashboard</h2>
+      <p>Melden Sie sich mit Ihrem Qlik-Account an,<br>um das Dashboard anzuzeigen.</p>
+      <button class="btn-primary" onclick="loginToQlik()">
+        🔐 Bei Qlik anmelden
+      </button>
     </div>
   </div>
 
   <!-- Dashboard -->
-  <div class="wrap">
+  <div id="dashboard-wrap" class="wrap" style="display:none;">
     <div class="bar">
-      <strong>Dashboard</strong><span style="opacity:.6"> – eingebettet</span>
-      <button style="float:right" onclick="logout()">Abmelden</button>
+      <div>
+        <strong>Dashboard</strong>
+        <span style="opacity:.6; margin-left: 8px;">– Live Analytics</span>
+      </div>
+      <button class="btn-secondary" onclick="logout()">
+        Abmelden
+      </button>
     </div>
     <iframe
+      id="dashboard-frame"
       class="frame"
       src="https://nexpert-ag.github.io/qlik-oauth-test/POC_V002.html"
       allowfullscreen
